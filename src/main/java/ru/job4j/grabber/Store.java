@@ -10,5 +10,5 @@ public interface Store {
 
     List<Post> getAll();
 
-    Post findBtId();
+    Post findById(int id);
 }
