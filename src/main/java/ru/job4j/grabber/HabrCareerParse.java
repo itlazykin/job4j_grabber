@@ -5,49 +5,60 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import ru.job4j.grabber.utils.DateTimeParser;
+import ru.job4j.grabber.utils.HabrCareerDateTimeParser;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
-public class HabrCareerParse {
+public class HabrCareerParse implements Parse {
     private static final String SOURCE_LINK = "https://career.habr.com";
     public static final String PREFIX = "/vacancies?page=";
     public static final String SUFFIX = "&q=Java%20developer&type=all";
     public static final int PAGES = 5;
+    private final DateTimeParser dateTimeParser;
+
+    public HabrCareerParse(DateTimeParser dateTimeParser) {
+        this.dateTimeParser = dateTimeParser;
+    }
+
+    @Override
+    public List<Post> list(String link) throws IOException {
+        List<Post> result = new ArrayList<>();
+        Connection connection = Jsoup.connect(link);
+        Document document = connection.get();
+        Elements rows = document.select(".vacancy-card__inner");
+        rows.forEach(row -> {
+            Element titleElement = row.select(".vacancy-card__title").first();
+            Element linkElement = titleElement.child(0);
+            String titlePost = titleElement.text();
+            String linkPost = String.format("%s%s", SOURCE_LINK, linkElement.attr("href"));
+            Element dateElement = row.select(".vacancy-card__date").first();
+            String vacancyDate = dateElement.child(0).attr("datetime");
+            LocalDateTime datePost = dateTimeParser.parse(vacancyDate);
+            Post post = new Post();
+            post.setTitle(titlePost);
+            post.setLink(linkPost);
+            try {
+                post.setDescription(retrieveDescription(linkPost));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            post.setCreated(datePost);
+            result.add(post);
+        });
+        return result;
+    }
 
     public static void main(String[] args) throws IOException {
-        HabrCareerParse parser = new HabrCareerParse();
-        /* формируем ссылку с учетом номера страницы и получаем саму страницу, чтобы с ней можно было работать */
         for (int i = 1; i <= PAGES; i++) {
-            String fullLink = "%s%s%d%s".formatted(SOURCE_LINK, PREFIX, i, SUFFIX);
-            Connection connection = Jsoup.connect(fullLink);
-            Document document = connection.get();
-            /* получаем все вакансии страницы */
-            Elements rows = document.select(".vacancy-card__inner");
-        /*
-        Проходимся по каждой вакансии и извлекаем нужные для нас данные.
-        Сначала получаем элементы содержащие название и ссылку.
-        Стоит обратить внимание, что дочерние элементы можно получать через индекс - метод child(0)
-        или же через селектор - select(".vacancy-card__title").
-         */
-            rows.forEach(row -> {
-                try {
-                    Element titleElement = row.select(".vacancy-card__title").first();
-                    Element linkElement = titleElement.child(0);
-                    Element dateElement = row.select(".vacancy-card__date").first();
-                    /*
-                    Получаем данные непосредственно. text() возвращает все содержимое элемента в виде текста,
-                    т.е. весь текст что находится вне тегов HTML. Ссылка находится в виде атрибута,
-                    поэтому ее значение надо получить как значение атрибута. Для этого служит метод attr()
-                    */
-                    String link = String.format("%s%s", SOURCE_LINK, linkElement.attr("href"));
-                    System.out.printf(
-                            "Дата: %s | Название: %s | Ссылка: %s%nОписание: %s%n%n",
-                            dateElement.text(), titleElement.text(), link, parser.retrieveDescription(link));
-                } catch (Exception e) {
-                    System.out.println("Не удалось загрузить описание для вакансии: " + e.getMessage());
-                }
-            });
+            HabrCareerParse habrCareerParse = new HabrCareerParse(new HabrCareerDateTimeParser());
+            habrCareerParse.list("%s%s%d%s".formatted(SOURCE_LINK, PREFIX, i, SUFFIX))
+                    .forEach(post ->
+                            System.out.println(post.getTitle() + " " + post.getLink() + " " + post.getCreated()
+                                    + " " + post.getDescription()));
         }
     }
 
