@@ -62,25 +62,18 @@ public class HabrCareerParse implements Parse {
         }
     }
 
-    /**
-     * Загружает и извлекает описание вакансии по указанной ссылке.
-     * <p>
-     * Метод использует библиотеку Jsoup для выполнения HTTP-запроса и
-     * парсинга HTML-документа. Он ищет элементы с классом
-     * "vacancy-description__text" на веб-странице, извлекает текст из всех найденных
-     * элементов и объединяет его в одну строку.
-     * </p>
-     *
-     * @param link URL-адрес страницы вакансии, откуда нужно извлечь описание.
-     * @return Строка, содержащая описание вакансии, объединённое из всех текстовых блоков с классом "vacancy-description__text".
-     * @throws IOException если произошла ошибка при подключении к странице или при загрузке HTML-документа.
-     */
     private String retrieveDescription(String link) throws IOException {
+        StringBuilder description = new StringBuilder();
         Connection connection = Jsoup.connect(link);
         Document document = connection.get();
-        List<String> description = document.select(".vacancy-description__text").eachText();
-        StringBuilder stringBuilder = new StringBuilder();
-        description.forEach(stringBuilder::append);
-        return stringBuilder.toString();
+        Elements rows = document.select(".vacancy-description__text");
+        rows.forEach(
+                row -> {
+                    for (int i = 0; i < row.childrenSize(); i++) {
+                        Element element = row.child(i);
+                        description.append(element.text()).append(System.lineSeparator());
+                    }
+                });
+        return description.toString();
     }
 }

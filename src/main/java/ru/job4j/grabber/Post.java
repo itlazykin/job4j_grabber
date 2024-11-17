@@ -63,7 +63,7 @@ public class Post {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)  {
+        if (this == o) {
             return true;
         }
         if (o == null || getClass() != o.getClass()) {
@@ -81,11 +81,11 @@ public class Post {
     @Override
     public String toString() {
         return "Post{"
-                + "id=" + id
-                + ", title='" + title + '\''
-                + ", link='" + link + '\''
-                + ", description='" + description + '\''
-                + ", created=" + created
-                + '}';
+                + "\n  id=" + id
+                + ",\n  title='" + title + '\''
+                + ",\n  description='" + description + '\''
+                + ",\n  link='" + link + '\''
+                + ",\n  created=" + created
+                + "\n}";
     }
 }
