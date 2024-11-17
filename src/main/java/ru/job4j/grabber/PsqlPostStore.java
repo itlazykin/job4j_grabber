@@ -1,11 +1,9 @@
 package ru.job4j.grabber;
 
-import ru.job4j.quartz.AlertRabbit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -89,24 +87,5 @@ public class PsqlPostStore implements Store {
         post.setDescription(resultSet.getString("text"));
         post.setCreated(resultSet.getTimestamp("created").toLocalDateTime());
         return post;
-    }
-
-    public static void main(String[] args) {
-        Post test = new Post();
-        test.setTitle("Title");
-        test.setDescription("Text");
-        test.setLink("some link");
-        test.setCreated(LocalDateTime.now());
-        System.out.println(test);
-        try (Store psqlPostStore = new PsqlPostStore(AlertRabbit.readProps("rabbit.properties"))) {
-            psqlPostStore.save(test);
-            List<Post> posts = psqlPostStore.getAll();
-            System.out.println(posts);
-            Post post = psqlPostStore.findById(posts.get(0).getId());
-            System.out.println(post);
-            System.out.println(test.getLink().equals(post.getLink()));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }
