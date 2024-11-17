@@ -15,16 +15,16 @@ public class PsqlPostStore implements Store {
     private static final Logger LOG = LoggerFactory.getLogger(PsqlPostStore.class.getName());
 
     public PsqlPostStore(Properties config) throws SQLException {
-        try {
-            Class.forName(config.getProperty("driver-class-name"));
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
         connection = DriverManager.getConnection(
                 config.getProperty("url"),
                 config.getProperty("username"),
                 config.getProperty("password")
         );
+        try {
+            Class.forName(config.getProperty("driver-class-name"));
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Override
